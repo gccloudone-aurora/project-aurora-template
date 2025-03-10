@@ -1,0 +1,9 @@
+plan
+.terraform
+*.lock.hcl
+*.tfstate
+*.tfstate.backup
+terraform.tfvars
+
+k8s
+envvars.sh
