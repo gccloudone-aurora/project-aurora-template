@@ -398,7 +398,7 @@ settings: |
         argocdInstance:
           adminSecurityGroup: 99999999-9999-9999-9999-999999999999
           disableAdmin: true
-          ingressDomain: argocd.aurora-dev-cc-00.cloud-nuage.canada.ca
+          ingressDomain: platform.aurora-dev-cc-00.cloud-nuage.canada.ca
           argocdVaultPlugin:
             credentials:
               azureClientID: '<path:kv999999argocd#common-dev-cc-00-argocd-kv-aadpodidentity-client-id>'
