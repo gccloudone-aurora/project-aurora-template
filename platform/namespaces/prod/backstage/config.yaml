@@ -4,9 +4,9 @@ settings: |
   # Information about the namespace.
   information:
     # Organisational information.
-    division: "HSB"
-    team: "Aurora"
-    projectName: "Example"
+    division: "IT"
+    team: "Platform Architecture"
+    projectName: "Backstage"
     projectLead: "Full Name"
     # The priority of the workload. Can be critical or medium.
     priority: "medium"
@@ -61,6 +61,7 @@ settings: |
   # Roles will be assigned based on the namespace type.
   rbac:
     groups:
+      # Azure AD Group for Platform Architecture
       - "9999999-9999-9999-9999-999999999999"
 
   # Defines resource quotas on the namespace.
@@ -85,4 +86,4 @@ settings: |
   # Defines cluster specific resources to be created in the namespace
   # Can be one of [aadPodIdentities].
   clusters:
-    aurora-dev-cc-00-aks: {}
+    aur-prod-cc-00-aks: {}
