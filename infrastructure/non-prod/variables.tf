@@ -1,9 +1,38 @@
+#######################
+### Azure Defaults ###
+#######################
+
+variable "tags" {
+  type = any
+}
+
+variable "env" {}
+
+variable "group" {}
+
+variable "project" {}
+
 variable "location" {
   description = "The Azure region where the resources should exist."
   type        = string
   nullable    = false
   default     = "Canada Central"
 }
+
+variable "domain" {
+  type = any
+}
+
+#######################
+### Aurora Defaults ###
+#######################
+
+# variable "location" {
+#   description = "The Azure region where the resources should exist."
+#   type        = string
+#   nullable    = false
+#   default     = "Canada Central"
+# }
 
 variable "aurora_common_azure_tags" {
   description = "Common Aurora tags for use on Azure resources."
@@ -14,60 +43,8 @@ variable "aurora_common_azure_tags" {
 ### Subscriptions ###
 #####################
 
-# variable "management_subscription_id" {
-#   description = "The subcription ID of the management subscription."
-#   type        = string
-#   nullable    = false
-#   sensitive   = true
-# }
-
-# variable "workstations_subscription_id" {
-#   description = "The subcription ID of the Workstations subscription."
-#   type        = string
-#   nullable    = false
-#   sensitive   = true
-# }
-
-# variable "auroranonprod_subscription_id" {
-#   description = "The subcription ID of the AuroraNonProd subscription."
-#   type        = string
-#   nullable    = false
-#   sensitive   = true
-# }
-
-# variable "auroraprod_subscription_id" {
-#   description = "The subcription ID of the AuroraProd subscription."
-#   type        = string
-#   nullable    = false
-#   sensitive   = true
-# }
-
-variable "dev_subscription_id" {
-  description = "The subcription ID of the dev subscription."
-  type        = string
-  nullable    = false
-}
-
-# variable "test_subscription_id" {
-#   description = "The subcription ID of the test subscription."
-#   type        = string
-#   nullable    = false
-# }
-
-# variable "uat_subscription_id" {
-#   description = "The subcription ID of the uat subscription."
-#   type        = string
-#   nullable    = false
-# }
-
-# variable "qa_subscription_id" {
-#   description = "The subcription ID of the qa subscription."
-#   type        = string
-#   nullable    = false
-# }
-
-# variable "prod_subscription_id" {
-#   description = "The subcription ID of the prod subscription."
+# variable "<sdlc>_subscription_id" {
+#   description = "The subscription ID of the <sdlc> subscription."
 #   type        = string
 #   nullable    = false
 # }
@@ -112,7 +89,7 @@ variable "platform_component_secrets" {
   description = "The secrets that require user input and that are used to create the platform components using Argo CD. The Argo CD Vault Plugin tool is used."
   type = object({
     image_pull_secret = object({
-      aurora_dev_cc_00  = string
+      aur_dev_cc_00 = string
     })
     grafana = optional(object({
       admin_password = string
@@ -122,7 +99,7 @@ variable "platform_component_secrets" {
       password = string
     }))
     kiali = object({
-      aurora_dev_cc_00_grafana_token  = string
+      grafana_token = string
     })
     kubecost = object({
       token       = string

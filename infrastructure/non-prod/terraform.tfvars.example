@@ -1,0 +1,45 @@
+env      = "GcDc"
+group    = "SSC"
+location = "canadacentral"
+project  = "Example"
+
+tags = {
+  builder        = "full.name@ssc-spc.gc.ca"
+  contact        = "full.name@ssc-spc.gc.ca"
+  owner          = "full.name@ssc-spc.gc.ca"
+  classification = "pbmm"
+  division       = "ssc"
+  env            = "dev"
+}
+
+aurora_common_azure_tags = {
+  SSC_CBRID               = 0000
+  wid                     = 00000
+  PrimaryProjectContact   = "full.name@ssc-spc.gc.ca"
+  PrimaryTechnicalContact = "full.name@ssc-spc.gc.ca"
+}
+
+domain = "example.ca"
+
+dns_server_ip_addresses = []
+
+platform_component_secrets = {
+  image_pull_secret = {
+    aurora_dev_cc_00 = "{\"auths\":{\"ghcr.io\":{\"username\":\"aurora-svc\",\"password\":\"XXXXXXXXXX\",\"email\":\"aurora-aurore@ssc-spc.gc.ca\",\"auth\":\"XXXXXXXXXX\"}}}"
+  }
+  elasticsearch = {
+    username = "kubernetes-ingest"
+    password = "XXXXXXXXXX"
+  }
+  loki = {
+    username = "loki-ingest"
+    password = "XXXXXXXXXX"
+  }
+  kiali = {
+    grafana_token = "dev"
+  }
+  kubecost = {
+    token       = ""
+    product_key = ""
+  }
+}
