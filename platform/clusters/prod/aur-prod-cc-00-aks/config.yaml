@@ -300,7 +300,7 @@ settings: |
         priorityClassName: platform-cluster-critical
 
       tetragon:
-        enabled: true
+        enabled: false
 
       trustManager:
         enabled: true
