@@ -1,4 +1,4 @@
-version: '0.0.29'
+version: '0.0.70'
 settings: |
   global:
     apiServerCidr: "<FILLIN_API_SERVER_ADDRESS>/27"
@@ -41,9 +41,9 @@ settings: |
           tag: main
 
         prometheus:
-          enabled: false
+          enabled: true
           servicemonitor:
-            enabled: false
+            enabled: true
 
         aurora:
           secretDockerConfigJson: '<path:<FILLIN_ARGO_KV>#<FILLIN_ARGO_KV_PREFIX>-image-pull-secret>'
@@ -65,9 +65,9 @@ settings: |
             resourceId: '<path:<FILLIN_ARGO_KV>#<FILLIN_ARGO_KV_PREFIX>-certmanager-aadpodidentity-resource-id>'
 
         prometheus:
-          enabled: false
+          enabled: true
           servicemonitor:
-            enabled: false
+            enabled: true
 
         dns01RecursiveNameservers: "<FILLIN_NAME_SERVERS>:<FILLIN_NAME_SERVERS>:53"
         dns01RecursiveNameserversOnly: true
@@ -93,9 +93,9 @@ settings: |
           tag: main
 
         prometheus:
-          enabled: false
+          enabled: true
           servicemonitor:
-            enabled: false
+            enabled: true
 
         secretDockerConfigJson: '<path:<FILLIN_ARGO_KV>#<FILLIN_ARGO_KV_PREFIX>-image-pull-secret>'
 
@@ -163,6 +163,7 @@ settings: |
               - docker.elastic.co/
               - mcr.microsoft.com/
               - quay.io/
+              - registry.k8s.io/
           restrictPodAnnotations:
             excludedNamespaces:
               - 'backstage'
@@ -173,6 +174,7 @@ settings: |
               - docker.elastic.co/
               - mcr.microsoft.com/
               - quay.io/
+              - registry.k8s.io/
           solutionContainerAllowedImages:
             allowedRepos:
               - ghcr.io/
@@ -180,6 +182,7 @@ settings: |
               - docker.elastic.co/
               - mcr.microsoft.com/
               - quay.io/
+              - registry.k8s.io/
 
       kubecost:
         enabled: false
@@ -222,12 +225,12 @@ settings: |
           tag: main
 
         prometheus:
-          enabled: false
+          enabled: true
           servicemonitor:
-            enabled: false
+            enabled: true
 
       prometheus:
-        enabled: false
+        enabled: true
 
         azure:
           clientId: '<path:<FILLIN_ARGO_KV>#<FILLIN_ARGO_KV_PREFIX>-grafana-sp-client-id>'
@@ -296,6 +299,16 @@ settings: |
 
         priorityClassName: platform-cluster-critical
 
+      tetragon:
+        enabled: true
+
+      trustManager:
+        enabled: true
+
+        bundle:
+          customCA: |-
+            <FILLIN_BASE&4_CUSTOM_CA>
+
       vaultAgent:
         enabled: false
 
@@ -305,7 +318,7 @@ settings: |
           agentImage: {}
 
       velero:
-        enabled: false
+        enabled: true
 
         backupStorage:
           bucket: velero
@@ -399,18 +412,20 @@ settings: |
           disableAdmin: false
           ingressDomain: aur.aurora.<FILLIN_INGRESS_DOMAIN>
           argocdVaultPlugin:
-            credentials:
-              azureClientID: '<path:<FILLIN_ARGO_KV>#<FILLIN_ARGO_KV_PREFIX>-argocd-kv-aadpodidentity-client-id>'
+            env:
+              ARGOCD_ENV_AVP_TYPE: "azurekeyvault"
+              ARGOCD_ENV_AZURE_CLIENT_ID: '<path:<FILLIN_ARGO_KV>#<FILLIN_ARGO_KV_PREFIX>-argocd-kv-aadpodidentity-client-id>'
+            azure:
+              AADPodIdentity:
+                enabled: true
+                managedIdentity:
+                  clientID: '<path:<FILLIN_ARGO_KV>#<FILLIN_ARGO_KV_PREFIX>-argocd-kv-aadpodidentity-client-id>'
+                  resourceID: '<path:<FILLIN_ARGO_KV>#<FILLIN_ARGO_KV_PREFIX>-argocd-kv-aadpodidentity-resource-id>'
           oidcAuthSP:
             credentials:
               tenantID: '<path:<FILLIN_ARGO_KV>#<FILLIN_ARGO_KV_PREFIX>-tenant-id>'
               clientID: '<path:<FILLIN_ARGO_KV>#gcdc-auroramgmt-platform-kvs-argocd-oidc-sp-client-id>'
               clientSecret: '<path:<FILLIN_ARGO_KV>#gcdc-auroramgmt-platform-kvs-argocd-oidc-sp-client-secret>'
-          aadPodIdentity:
-            enabled: true
-            managedIdentity:
-              clientID: '<path:<FILLIN_ARGO_KV>#<FILLIN_ARGO_KV_PREFIX>-argocd-kv-aadpodidentity-client-id>'
-              resourceID: '<path:<FILLIN_ARGO_KV>#<FILLIN_ARGO_KV_PREFIX>-argocd-kv-aadpodidentity-resource-id>'
           notifications:
             enabled: true
           netpol:
@@ -447,23 +462,23 @@ settings: |
         argocdProjects:
           platform:
             applicationSet:
-              generator:
-                git:
-                  repoURL: https://github.com/gccloudone-aurora/project-aurora-template.git
-                  revision: main
-                  files:
-                    - path: platform/clusters/prod/**/config.yaml
+              generators:
+                - git:
+                    repoURL: https://github.com/gccloudone-aurora/project-aurora-template.git
+                    revision: main
+                    files:
+                      - path: platform/clusters/prod/**/config.yaml
               template:
                 source:
                   repoURL: https://gccloudone-aurora.github.io/aurora-platform-charts
           solutions:
             applicationSet:
-              generator:
-                git:
-                  repoURL: https://github.com/gccloudone-aurora/project-aurora-mgmt.git
-                  revision: main
-                  files:
-                    - path: platform/namespaces/prod/**/config.yaml
+              generators:
+                - git:
+                    repoURL: https://github.com/gccloudone-aurora/project-aurora-template.git
+                    revision: main
+                    files:
+                      - path: platform/namespaces/prod/**/config.yaml
               template:
                 source:
                   repoURL: https://gccloudone-aurora.github.io/aurora-platform-charts
