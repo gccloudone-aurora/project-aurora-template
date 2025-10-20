@@ -1,4 +1,4 @@
-version: '0.0.70'
+version: '0.0.71'
 settings: |
   global:
     apiServerCidr: "<FILLIN_API_SERVER_ADDRESS>/27"
