@@ -1,4 +1,4 @@
-version: '0.0.85'
+version: '0.0.196'
 settings: |
   global:
     apiServerCidr: "<FILLIN_API_SERVER_ADDRESS>/27"
@@ -59,10 +59,9 @@ settings: |
 
         startupapicheck: {}
 
-        aadPodIdentity:
-          azureManagedIdentity:
-            clientId: '<path:<FILLIN_ARGO_KV>#<FILLIN_ARGO_KV_PREFIX>-certmanager-aadpodidentity-client-id>'
-            resourceId: '<path:<FILLIN_ARGO_KV>#<FILLIN_ARGO_KV_PREFIX>-certmanager-aadpodidentity-resource-id>'
+        azureWorkloadIdentity:
+          enabled: true
+          clientId: '<path:<FILLIN_ARGO_KV>#<FILLIN_ARGO_KV_PREFIX>-certmanager-aadpodidentity-client-id>'
 
         prometheus:
           enabled: true
@@ -112,13 +111,34 @@ settings: |
         bgpControlPlane:
           enabled: false
 
-        ciliumBGPPeeringPolicy:
-          virtualRouters:
-          - exportPodCIDR: true
-            localASN: 64512
-            neighbors:
+        ciliumBGPClusterConfig:
+          bgpInstances:
+          - localASN: 64512
+            name: instance-64512
+            peers:
             - peerASN: 64512
               peerAddress: <FILLIN_PEER_ADDRESS>/32
+              name: peer-<FILLIN_PEER_ADDRESS_WITHOUT_DOTS>
+
+      falco:
+        enabled: true
+
+        falcoctl:
+          artifact:
+            install:
+              enabled: true
+              mounts:
+                volumeMounts:
+                - name: ca-certificates
+                  readOnly: true
+                  mountPath: "/etc/ssl/certs/ca-certificates.pem"
+                  subPath: "ca-certificates.crt"
+
+        mounts:
+          volumes:
+          - name: ca-certificates
+            configMap:
+              name: trust-manager-propagated-custom-ca
 
       fluentOperator:
         enabled: false
@@ -329,10 +349,14 @@ settings: |
         volumeSnapshot:
           resourceGroupName: '<path:<FILLIN_ARGO_KV>#<FILLIN_ARGO_KV_PREFIX>-velero-sa-resource-group-name>'
 
-        aadPodIdentity:
-          azureManagedIdentity:
-            clientId: '<path:<FILLIN_ARGO_KV>#<FILLIN_ARGO_KV_PREFIX>-velero-aadpodidentity-client-id>'
-            resourceId: '<path:<FILLIN_ARGO_KV>#<FILLIN_ARGO_KV_PREFIX>-velero-aadpodidentity-resource-id>'
+        azureWorkloadIdentity:
+          enabled: true
+          clientId: '<path:<FILLIN_ARGO_KV>#<FILLIN_ARGO_KV_PREFIX>-velero-aadpodidentity-client-id>'
+
+      kubebench:
+        enabled: true
+        cronjob:
+          schedule: "30 10 * * *"
 
   app:
     enabled: true
