@@ -1,11 +1,5 @@
 data "azurerm_subscription" "this" {}
 
-data "azurerm_subnet" "route_reflector_subnet" {
-  name                 = "RouteReflectorSubnet"
-  virtual_network_name = "<FILLIN_VIRTUAL_NETWORK_NAME>"
-  resource_group_name  = "<FILLIN_RESOURCE_GROUP_NAME>"
-}
-
 ###########
 ### DNS ###
 ###########
@@ -35,6 +29,16 @@ data "azurerm_private_dns_zone" "keyvault" {
 ###########
 
 data "azurerm_client_config" "this" {}
+
+# data "azuread_group" "aurora_general_cluster_user" {
+#   object_id        = "XXXXX-XXXX-XXXX-XXXX-XXXXX"
+#   security_enabled = true
+# }
+
+# data "azuread_user" "aad_service_principal_owners" {
+#   for_each            = { for index, user in local.service_principal_owner_names : index => user }
+#   user_principal_name = each.value
+# }
 
 ##################
 ## BGP Solution ##

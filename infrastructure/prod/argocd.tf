@@ -9,19 +9,15 @@ resource "azurerm_resource_group" "argocd" {
   tags = local.azure_tags
 }
 
-# Manages an Azure keyvault.
-#
-# https://github.com/gccloudone-aurora-iac/terraform-azure-key-vault
-#
 module "argocd_key_vault" {
-  source = "git::https://github.com/gccloudone-aurora-iac/terraform-azure-key-vault.git?ref=v2.0.0"
+  source = "git::https://github.com/gccloudone-aurora-iac/terraform-azure-key-vault.git?ref=v2.0.1"
 
   azure_resource_attributes = local.aurora_azure_resource_attributes
 
-  naming_convention = "gc"
-  user_defined      = "ARGO"
+  naming_convention         = "gc"
+  user_defined              = "ARGO"
 
-  resource_group_name = azurerm_resource_group.argocd.name
+  resource_group_name       = azurerm_resource_group.argocd.name
 
   sku_name                   = "premium"
   purge_protection_enabled   = true
@@ -40,9 +36,10 @@ module "argocd_key_vault" {
 }
 
 resource "azurerm_key_vault_access_policy" "cicd_runner_sp" {
+  for_each     = toset(local.spn_object_ids)
   key_vault_id = module.argocd_key_vault.id
   tenant_id    = data.azurerm_client_config.this.tenant_id
-  object_id    = data.azurerm_client_config.this.object_id
+  object_id    = each.value
 
   secret_permissions = [
     "Get",
@@ -71,9 +68,9 @@ resource "azurerm_key_vault_access_policy" "argocd_kv_msi" {
   ]
 }
 
-###########
-### MSI ###
-###########
+# ###########
+# ### MSI ###
+# ###########
 
 resource "azurerm_user_assigned_identity" "argocd_vault_plugin" {
   name                = "${module.platform_azure_resource_names.managed_identity_name}-argocd"
@@ -100,23 +97,23 @@ resource "azurerm_key_vault_secret" "argocd_vault_plugin_msi_resource_id" {
   key_vault_id = module.argocd_key_vault.id
 }
 
-######################
-### ArgoCD Secrets ###
-######################
+# ######################
+# ### ArgoCD Secrets ###
+# ######################
 
-# Manages Aurora Environment ArgoCD secrets.
+# Manages the Aurora Environment ArgoCD secrets.
 #
 # https://github.com/gccloudone-aurora-iac/terraform-aurora-azure-environment-argo-secrets
 #
 module "aurora_argocd_secrets" {
-  source = "git::https://github.com/gccloudone-aurora-iac/terraform-aurora-azure-environment-argo-secrets.git?ref=v2.0.0"
+  source = "git::https://github.com/gccloudone-aurora-iac/terraform-aurora-azure-environment-argo-secrets.git?ref=v2.0.1"
 
   azure_resource_attributes = local.aurora_azure_resource_attributes
 
-  naming_convention = "gc"
-  user_defined      = "ARGO"
+  naming_convention         = "gc"
+  user_defined              = "ARGO"
 
-  argocd_keyvault_id = module.argocd_key_vault.id
+  argocd_keyvault_id        = module.argocd_key_vault.id
 
   load_balancer_subnet_name = module.aurora.vnet_subnets["loadbalancer"].name
 
@@ -200,32 +197,28 @@ module "aurora_argocd_secrets" {
     module.aurora
   ]
 
-  # Cross subscription keyvault access fix
+  # Cross-subscription keyvault access fix
   # See https://github.com/hashicorp/terraform-provider-azurerm/issues/22064#issuecomment-1769799318
-  # providers = { azurerm = azurerm.<sdlc> }
+  # providers = { azurerm = azurerm.cnpprod }
 }
 
 ####################
 ### ArgoCD OIDC ###
 ####################
 
-# Manages Azure service principals.
-#
-# https://github.com/gccloudone-aurora-iac/terraform-azure-service-principal
-#
 module "argocd_oidc_sp" {
-  source = "git::https://github.com/gccloudone-aurora-iac/terraform-azure-service-principal.git?ref=v2.0.0"
+  source = "git::https://github.com/gccloudone-aurora-iac/terraform-azure-service-principal.git?ref=v2.0.1"
 
   azure_resource_attributes = local.aurora_azure_resource_attributes
 
-  naming_convention = "gc"
-  user_defined      = "ARGO"
+  naming_convention         = "gc"
+  user_defined              = "ARGO"
 
-  owners = local.service_principal_owners
+  owners                    = local.service_principal_owners
 
   web_redirect_uris = [
     "https://aur.aurora.${local.domain}/auth/callback",
-    // "https://project.aurora.${local.domain}/auth/callback"
+    "https://sol.aurora.${local.domain}/auth/callback"
   ]
 
   group_membership_claims = ["All", "ApplicationGroup"]

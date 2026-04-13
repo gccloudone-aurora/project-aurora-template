@@ -1,12 +1,14 @@
 terraform {
-  required_version = "= 1.9.8"
+  required_version = ">= 1.11.1"
 
   required_providers {
     azurerm = {
+      # https://github.com/terraform-providers/terraform-provider-azurerm
       source  = "hashicorp/azurerm"
-      version = "~> 4.26.0"
+      version = "~> 4.49.0"
     }
     azuread = {
+      # https://github.com/hashicorp/terraform-provider-azuread
       source  = "hashicorp/azuread"
       version = "~> 3.3.0"
     }
@@ -40,13 +42,33 @@ provider "azurerm" {
   features {}
   resource_provider_registrations = "none"
   storage_use_azuread             = true
-  use_cli = true
 }
 
 # provider "azurerm" {
 #   features {}
-#   alias                      = "<sdlc>"
-#   subscription_id            = var.<sdlc>_subscription_id
+#   alias                      = "management"
+#   subscription_id            = var.management_subscription_id
+#   skip_provider_registration = "true"
+# }
+
+# provider "azurerm" {
+#   features {}
+#   alias                      = "workstations_provider"
+#   subscription_id            = var.workstations_subscription_id
+#   skip_provider_registration = "true"
+# }
+
+# provider "azurerm" {
+#   features {}
+#   alias                      = "cnpnonprod"
+#   subscription_id            = var.cnpnonprod_subscription_id
+#   skip_provider_registration = "true"
+# }
+
+# provider "azurerm" {
+#   features {}
+#   alias                      = "cnpprod"
+#   subscription_id            = var.cnpprod_subscription_id
 #   skip_provider_registration = "true"
 # }
 
@@ -72,8 +94,7 @@ provider "kubernetes" {
       "--server-id",
       "6dae42f8-4368-4678-94ff-3960e28e3630",
       "--login",
-      "spn" # Use "spn" in a pipeline
-      # "azurecli"
+      "azurecli"
     ]
   }
 }

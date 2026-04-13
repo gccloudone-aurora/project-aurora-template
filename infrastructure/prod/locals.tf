@@ -7,32 +7,37 @@ locals {
     location        = var.location
     instance        = 0
   }
-
+ 
   azure_tags = merge(var.tags, var.aurora_common_azure_tags)
 
-  domain = var.domain
+  custom_ca                      = ""
+  cluster_admins_group_object_id = null
+  dns_servers                    = var.dns_server_ip_addresses
+  ddos_protection_plan_id        = null
 
+  spn_object_ids = var.spn_object_ids
   service_principal_owner_names = [
-    "full.name@ssc-spc.gc.ca"
+    "william.hearn@ssc-spc.gc.ca"
   ]
-  service_principal_owners = []
+  service_principal_owners = var.spn_object_ids
 
   owner = "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX"
 
-  custom_ca               = null
-  dns_servers             = var.dns_server_ip_addresses
-  ddos_protection_plan_id = null
+  # Helper
+  # subnets_map = {
+  #   for k, s in data.azurerm_subnet.this :
+  #   k => {
+  #     id   = s.id
+  #     name = s.name
+  #   }
+  # }
 
-  ## Network
+  # Network
   vnet_address_space = ["XX.XXX.X.X/22"]
   vnet_peers         = []
-  vnet_id            = null
-  subnet_ids         = null
-
-  # BYON
-  # vnet_id    = data.terraform_remote_state.L1.outputs.Project-vnet.id
-  # subnets    = null
-  # subnet_ids = { for key, value in data.terraform_remote_state.L1.outputs.subnets : key => value.id }
+  # vnet_id          = null
+  # subnets          = null
+  # subnets_ids      = null
 
   subnets = {
     RouteServerSubnet = {
@@ -63,6 +68,9 @@ locals {
     }
   }
 
+  pod_subnet_id      = null
+
+  # Data Sources
   environment_data_sources = {
     dns_zone_id = {
       azmk8s       = data.azurerm_private_dns_zone.aks_api_server.id
@@ -84,47 +92,28 @@ locals {
       subscription_id = data.azurerm_client_config.this.subscription_id
     }
   }
+
+  # Platform
+  grafana_sp = {
+    members = {
+      admin  = {}
+      viewer = {
+        # aurora_general_cluster_user = data.azuread_group.aurora_general_cluster_user.object_id
+      }
+    }
+  }
 }
 
-###########
-### BGP ###
-###########
+####################
+### BGP Solution ###
+####################
 
 locals {
   asn_cns = 64512
 
-  # Route Reflector
-  # route_reflector_subnet_id = data.azurerm_subnet.route_reflector_subnet.id
-  # route_reflector_ipv4_addresses = [
-  #   "XX.XXX.X.XXX"
-  # ]
-
-  # Create BGP connections between the cluster's Azure Route Server & the BGP Route Reflector
-  # route_server_bgp_peers = length(local.route_reflector_ipv4_addresses) > 0 ? [
-  #   for index, route_reflector_ip in local.route_reflector_ipv4_addresses : {
-  #     name     = "vm-route-reflector-${index}"
-  #     peer_asn = local.asn_cns
-  #     peer_ip  = route_reflector_ip
-  #   }
-  # ] : []
-  # route_server_resource_group_name = module.aurora.platform_resource_group_id
-  # route_server_subnet_id           = module.aurora.vnet_subnets["RouteServerSubnet"].id
-
-  # BYON
-  # route_server_resource_group_name = data.terraform_remote_state.L1.outputs.resource_groups_L1["Network"].name
-  # route_server_subnet_id           = data.terraform_remote_state.L1.outputs.subnets["RouteServerSubnet"].id
-
-  # Route Table
-  # route_table_next_hop_ip_address = "XX.XXX.X.XXX"
-
-  # # Create BGP connections between the Cilium virtual routers & the BGP Route Reflector
-  # cilium_bgp_peers = [for route_reflector_ip in local.route_reflector_ipv4_addresses :
-  #   {
-  #     asn = local.asn_cns
-  #     ip  = "${route_reflector_ip}/32"
-  #   }
-  # ]
-  # cilium_cluster_address_prefixes = ["XXX.XX.X.X/16"]
+  route_reflector_ipv4_addresses = []
+  route_server_bgp_peers          = null
+  route_table_next_hop_ip_address = null
 }
 
 ##################
@@ -134,8 +123,8 @@ locals {
 locals {
   aurora_namespace_annotations = {
     "project.ssc-spc.gc.ca/onboarding"     = ""
-    "project.ssc-spc.gc.ca/lead"           = "Full Name"
-    "project.ssc-spc.gc.ca/technical-lead" = "Full Name"
+    "project.ssc-spc.gc.ca/lead"           = "Albert Abdullah Kouri"
+    "project.ssc-spc.gc.ca/technical-lead" = "William Hearn"
     "project.ssc-spc.gc.ca/git-group"      = "https://github.com/gccloudone-aurora"
   }
 
@@ -143,7 +132,7 @@ locals {
     "project.ssc-spc.gc.ca/name"         = "Aurora"
     "finance.ssc-spc.gc.ca/workload-id"  = "00001"
     "project.ssc-spc.gc.ca/team"         = "Aurora"
-    "project.ssc-spc.gc.ca/division"     = "IT"
+    "project.ssc-spc.gc.ca/division"     = "HSB"
     "project.ssc-spc.gc.ca/frc"          = "00000"
     "project.ssc-spc.gc.ca/pe"           = "00000"
     "project.ssc-spc.gc.ca/ato-received" = "false"
@@ -154,18 +143,5 @@ locals {
   namespace_metadata = {
     annotations = local.aurora_namespace_annotations
     labels      = local.aurora_namespace_labels
-  }
-}
-
-################
-### Platform ###
-################
-
-locals {
-  grafana_sp = {
-    members = {
-      admin  = {}
-      viewer = {}
-    }
   }
 }
