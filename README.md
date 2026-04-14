@@ -1,3 +1,3 @@
 # Project Aurora Template
 
-This root module is used to create & manage the Aurora platform for Aurora.
+This module is provided as a template to create & manage the Aurora platform for Aurora.
