@@ -7,9 +7,7 @@ variable "tags" {
 }
 
 variable "env" {}
-
 variable "group" {}
-
 variable "project" {}
 
 variable "location" {
@@ -21,6 +19,10 @@ variable "location" {
 
 variable "domain" {
   type = any
+}
+
+variable "spn_object_ids" {
+  type = list(string)
 }
 
 #######################
@@ -89,7 +91,7 @@ variable "platform_component_secrets" {
   description = "The secrets that require user input and that are used to create the platform components using Argo CD. The Argo CD Vault Plugin tool is used."
   type = object({
     image_pull_secret = object({
-      aur_dev_cc_00 = string
+      aurora_dev_cc_00 = string
     })
     grafana = optional(object({
       admin_password = string

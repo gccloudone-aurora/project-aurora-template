@@ -9,7 +9,7 @@
 # https://github.com/gccloudone-aurora-iac/terraform-azure-route-server
 #
 # module "route_server" {
-#   source = "git::https://github.com/gccloudone-aurora-iac/terraform-azure-route-server.git?ref=v2.0.0"
+#   source = "git::https://github.com/gccloudone-aurora-iac/terraform-azure-route-server.git?ref=v2.0.1"
 
 #   count = local.vnet_id != null ? 1 : 0
 
@@ -34,16 +34,17 @@
 # https://github.com/gccloudone-aurora-iac/terraform-aurora-azure-bgp-route-reflector
 #
 # module "bgp_route_reflector" {
-#   source = "git::https://github.com/gccloudone-aurora-iac/terraform-aurora-azure-bgp-route-reflector.git?ref=v2.0.0"
+#   source = "git::https://github.com/gccloudone-aurora-iac/terraform-aurora-azure-bgp-route-reflector.git?ref=v2.0.1"
 
 #   azure_resource_attributes = local.aurora_azure_resource_attributes
-#   naming_convention         = "gc"
-#   user_defined              = "bgp"
+#   naming_convention = "gc"
+#   user_defined = "bgp"
 
 #   source_image = data.azurerm_platform_image.bgp_route_reflector
 
 #   subnet_id = local.route_reflector_subnet_id
 
+#   # Route Reflector VMs
 #   vm_instances         = 1
 #   private_ip_addresses = local.route_reflector_ipv4_addresses
 
