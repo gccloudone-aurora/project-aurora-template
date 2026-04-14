@@ -10,6 +10,8 @@ locals {
 
   azure_tags = merge(var.tags, var.aurora_common_azure_tags)
 
+  domain = var.domain
+
   custom_ca                      = ""
   cluster_admins_group_object_id = null
   dns_servers                    = var.dns_server_ip_addresses
@@ -17,7 +19,7 @@ locals {
 
   spn_object_ids = var.spn_object_ids
   service_principal_owner_names = [
-    "first.last@ssc-spc.gc.ca"
+    "full.name@ssc-spc.gc.ca"
   ]
   service_principal_owners = var.spn_object_ids
 
