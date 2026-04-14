@@ -21,7 +21,7 @@ variable "domain" {
   type = any
 }
 
-variable spn_object_ids {
+variable "spn_object_ids" {
   type = list(string)
 }
 

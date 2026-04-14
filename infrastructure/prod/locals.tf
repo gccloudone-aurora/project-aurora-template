@@ -7,7 +7,7 @@ locals {
     location        = var.location
     instance        = 0
   }
- 
+
   azure_tags = merge(var.tags, var.aurora_common_azure_tags)
 
   custom_ca                      = ""
@@ -35,10 +35,7 @@ locals {
   # Network
   vnet_address_space = ["XX.XXX.X.X/22"]
   vnet_peers         = []
-  # vnet_id          = null
-  # subnets          = null
-  # subnets_ids      = null
-
+  vnet_id            = null
   subnets = {
     RouteServerSubnet = {
       address_prefixes      = ["XX.XXX.X.X/27"]
@@ -67,8 +64,9 @@ locals {
       service_endpoints = ["Microsoft.Storage", "Microsoft.KeyVault", "Microsoft.Sql"]
     }
   }
+  subnets_ids = null
 
-  pod_subnet_id      = null
+  pod_subnet_id = "<FILLIN_POD_SUBNET_ID>"
 
   # Data Sources
   environment_data_sources = {
@@ -96,7 +94,7 @@ locals {
   # Platform
   grafana_sp = {
     members = {
-      admin  = {}
+      admin = {}
       viewer = {
         # aurora_general_cluster_user = data.azuread_group.aurora_general_cluster_user.object_id
       }
@@ -111,7 +109,7 @@ locals {
 locals {
   asn_cns = 64512
 
-  route_reflector_ipv4_addresses = []
+  route_reflector_ipv4_addresses  = []
   route_server_bgp_peers          = null
   route_table_next_hop_ip_address = null
 }

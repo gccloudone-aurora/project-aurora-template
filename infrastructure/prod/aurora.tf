@@ -34,13 +34,13 @@ module "aurora" {
   kubernetes_version      = "1.35.1"
   node_os_upgrade_channel = "None"
   cluster_sku_tier        = "Premium"
-  cluster_support_plan    = "AKSLongTermSupport"
+  cluster_support_plan    = "KubernetesOfficial"
 
   ## Network
-  network_plugin      = "none"
-  network_mode        = null
-  network_policy      = null
-  network_data_plane  = null
+  network_plugin     = "azure"
+  network_mode       = null
+  network_policy     = "cilium"
+  network_data_plane = "cilium"
 
   spn_object_ids = local.spn_object_ids
 
@@ -80,7 +80,7 @@ module "aurora" {
       enable_auto_scaling    = true
       auto_scaling_min_nodes = 1
       auto_scaling_max_nodes = 3
-      os_sku             = "AzureLinux"
+      os_sku                 = "AzureLinux"
 
       pod_subnet_id = local.pod_subnet_id
 
@@ -96,7 +96,7 @@ module "aurora" {
       enable_auto_scaling    = true
       auto_scaling_min_nodes = 1
       auto_scaling_max_nodes = 3
-      os_sku             = "AzureLinux"
+      os_sku                 = "AzureLinux"
 
       pod_subnet_id = local.pod_subnet_id
 

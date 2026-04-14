@@ -14,10 +14,10 @@ module "argocd_key_vault" {
 
   azure_resource_attributes = local.aurora_azure_resource_attributes
 
-  naming_convention         = "gc"
-  user_defined              = "ARGO"
+  naming_convention = "gc"
+  user_defined      = "ARGO"
 
-  resource_group_name       = azurerm_resource_group.argocd.name
+  resource_group_name = azurerm_resource_group.argocd.name
 
   sku_name                   = "premium"
   purge_protection_enabled   = true
@@ -110,10 +110,10 @@ module "aurora_argocd_secrets" {
 
   azure_resource_attributes = local.aurora_azure_resource_attributes
 
-  naming_convention         = "gc"
-  user_defined              = "ARGO"
+  naming_convention = "gc"
+  user_defined      = "ARGO"
 
-  argocd_keyvault_id        = module.argocd_key_vault.id
+  argocd_keyvault_id = module.argocd_key_vault.id
 
   load_balancer_subnet_name = module.aurora.vnet_subnets["loadbalancer"].name
 
@@ -199,7 +199,7 @@ module "aurora_argocd_secrets" {
 
   # Cross-subscription keyvault access fix
   # See https://github.com/hashicorp/terraform-provider-azurerm/issues/22064#issuecomment-1769799318
-  # providers = { azurerm = azurerm.cnpprod }
+  # providers = { azurerm = azurerm.<sdlc> }
 }
 
 ####################
@@ -211,10 +211,10 @@ module "argocd_oidc_sp" {
 
   azure_resource_attributes = local.aurora_azure_resource_attributes
 
-  naming_convention         = "gc"
-  user_defined              = "ARGO"
+  naming_convention = "gc"
+  user_defined      = "ARGO"
 
-  owners                    = local.service_principal_owners
+  owners = local.service_principal_owners
 
   web_redirect_uris = [
     "https://aur.aurora.${local.domain}/auth/callback",

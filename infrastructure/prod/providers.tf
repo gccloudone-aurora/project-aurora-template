@@ -44,34 +44,6 @@ provider "azurerm" {
   storage_use_azuread             = true
 }
 
-# provider "azurerm" {
-#   features {}
-#   alias                      = "management"
-#   subscription_id            = var.management_subscription_id
-#   skip_provider_registration = "true"
-# }
-
-# provider "azurerm" {
-#   features {}
-#   alias                      = "workstations_provider"
-#   subscription_id            = var.workstations_subscription_id
-#   skip_provider_registration = "true"
-# }
-
-# provider "azurerm" {
-#   features {}
-#   alias                      = "cnpnonprod"
-#   subscription_id            = var.cnpnonprod_subscription_id
-#   skip_provider_registration = "true"
-# }
-
-# provider "azurerm" {
-#   features {}
-#   alias                      = "cnpprod"
-#   subscription_id            = var.cnpprod_subscription_id
-#   skip_provider_registration = "true"
-# }
-
 # Configures the kubernetes provider from Hashicorp
 # Some special notes:
 #   - The 'exec' plugin is used here since AAD authentication is required to authenticate to the cluster. AAD authentication is required because local accounts are disabled (which should be always).
