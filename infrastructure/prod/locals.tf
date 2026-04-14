@@ -17,7 +17,7 @@ locals {
 
   spn_object_ids = var.spn_object_ids
   service_principal_owner_names = [
-    "william.hearn@ssc-spc.gc.ca"
+    "first.last@ssc-spc.gc.ca"
   ]
   service_principal_owners = var.spn_object_ids
 
@@ -121,8 +121,8 @@ locals {
 locals {
   aurora_namespace_annotations = {
     "project.ssc-spc.gc.ca/onboarding"     = ""
-    "project.ssc-spc.gc.ca/lead"           = "Albert Abdullah Kouri"
-    "project.ssc-spc.gc.ca/technical-lead" = "William Hearn"
+    "project.ssc-spc.gc.ca/lead"           = ""
+    "project.ssc-spc.gc.ca/technical-lead" = ""
     "project.ssc-spc.gc.ca/git-group"      = "https://github.com/gccloudone-aurora"
   }
 
