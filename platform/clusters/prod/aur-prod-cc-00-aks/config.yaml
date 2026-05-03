@@ -478,7 +478,8 @@ settings: |
       ### Argo Controller ###
       #######################
       argoController:
-        enabled: false
+        enabled: true
+
         controllers:
           syncAppProjects:
             enabled: false
