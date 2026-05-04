@@ -2,7 +2,7 @@
 # Replace all <FILLIN_...> placeholders with environment-specific values before deployment.
 # Some sections (for example under core.components) are enabled only when set to enabled: true.
 
-version: '0.0.208'
+version: '0.0.212'
 settings: |
   global:
     helm: {}
@@ -678,7 +678,7 @@ settings: |
               template:
                 source:
                   repoURL: https://gccloudone-aurora.github.io/aurora-platform-charts
-          solutions:
+          namespaces:
             applicationSet:
               generators:
                 - git:
@@ -691,6 +691,16 @@ settings: |
                     revision: main
                     files:
                       - path: platform/namespaces/non-prod/**/config.yaml
+              template:
+                source:
+                  repoURL: https://gccloudone-aurora.github.io/aurora-platform-charts
+                  helmValues:
+                    argocd:
+                      project:
+                        sourceRepos: ['*']
+          solutions:
+            applicationSet:
+              generators: []
               template:
                 source:
                   repoURL: https://gccloudone-aurora.github.io/aurora-platform-charts
