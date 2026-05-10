@@ -415,6 +415,12 @@ settings: |
 
         priorityClassName: platform-cluster-critical
 
+      ################################
+      ### Secrets Store CSI Driver ###
+      ################################
+      secretsStoreCSIDriver:
+        enabled: true
+
       #############
       ### Trivy ###
       #############
