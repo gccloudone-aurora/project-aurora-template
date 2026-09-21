@@ -2,8 +2,8 @@
 # Replace all <FILLIN_...> placeholders with environment-specific values before deployment.
 # Some sections (for example under core.components) are enabled only when set to enabled: true.
 
-version: '0.0.212'
-settings: |
+version: '0.0.332'
+settings: |-
   global:
     helm: {}
       # Override all Helm applications to pull
@@ -12,16 +12,16 @@ settings: |
       #
       # You can override specific charts below
       # in the components section.
-      # repository: https://myrepo.example.ca
+      # repository: https://artifacts-artefacts.devops.cloud-nuage.canada.ca/ssc-aurora-helm
 
-    container: {}
+    container:
       # Override all applications to pull
       # their container from the following
       # registry.
       #
       # You can override specific charts below
       # in the components section.
-      # registry: docker.io
+      registry: artifacts-artefacts.devops.cloud-nuage.canada.ca/ssc-aurora-docker
 
     # azure or aws
     provider: azure
@@ -47,7 +47,7 @@ settings: |
     # vaultCidrs: ["172.23.211.18/32"]
 
     # Indicates if Loki logging is enabled cluster-wide.
-    # clusterHasLoki: false
+    clusterHasLoki: true
 
     # Azure-specific settings.
     load_balancer_subnet_name: '<path:<FILLIN_ARGO_KV>#<FILLIN_ARGO_KV_PREFIX>-load-balancer-subnet-name>'
@@ -61,23 +61,29 @@ settings: |
     enabled: true
 
     rbac:
-      platformAdmin:
-        groups: ["<FILLIN_AZURE_AD_GROUP>"]
+      # Allow MSI for firewall rbac
+      firewall:
+        enabled: true
+        msi: "<FILLIN_AZURE_AD_GROUP>"
+
       platformOperator:
         groups: ["<FILLIN_AZURE_AD_GROUP>"]
       securityOperations:
         groups: ["<FILLIN_AZURE_AD_GROUP>"]
 
     components:
-      ########################
-      ### AAD Pod Identity ###
-      ########################
-      aadPodIdentity:
+      #############
+      ### Alloy ###
+      #############
+      alloy:
         enabled: true
 
-        mic: {}
-
-        nmi: {}
+        config:
+          loki:
+            write:
+              url: "http://loki-gateway.loki-system.svc.cluster.local/loki/api/v1/push"
+              username: '<path:<FILLIN_ARGO_KV>#<FILLIN_ARGO_KV_PREFIX>-loki-user>'
+              password: '<path:<FILLIN_ARGO_KV>#<FILLIN_ARGO_KV_PREFIX>-loki-password>'
 
       #########################
       ### Aurora Controller ###
@@ -110,7 +116,7 @@ settings: |
 
         startupapicheck: {}
 
-        azureWorkloadIdentity:
+        workloadIdentity:
           enabled: true
           clientId: '<path:<FILLIN_ARGO_KV>#<FILLIN_ARGO_KV_PREFIX>-certmanager-aadpodidentity-client-id>'
 
@@ -140,7 +146,7 @@ settings: |
       ### CIDR Allocator ###
       ######################
       cidrAllocator:
-        enabled: true
+        enabled: false
 
         image:
           tag: main
@@ -159,11 +165,16 @@ settings: |
       ### Cilium ###
       ##############
       cilium:
-        enabled: true
+        enabled: false
 
         secretDockerConfigJson: '<path:<FILLIN_ARGO_KV>#<FILLIN_ARGO_KV_PREFIX>-image-pull-secret>'
 
         enableIPv4Masquerade: true
+
+        prometheus:
+          enabled: true
+          serviceMonitor:
+            enabled: true
 
         bgpControlPlane:
           enabled: false
@@ -181,30 +192,30 @@ settings: |
       ### Falco ###
       #############
       falco:
-        enabled: true
+        enabled: false
 
         falcoctl:
           artifact:
             install:
               enabled: true
-              # mounts:
-              #   volumeMounts:
-              #   - name: ca-certificates
-              #     readOnly: true
-              #     mountPath: "/etc/ssl/certs/ca-certificates.pem"
-              #     subPath: "ca-certificates.crt"
+              mounts:
+                volumeMounts:
+                - name: ca-certificates
+                  readOnly: true
+                  mountPath: "/etc/ssl/certs/ca-certificates.pem"
+                  subPath: "ca-certificates.crt"
 
-        # mounts:
-        #   volumes:
-        #   - name: ca-certificates
-        #     configMap:
-        #       name: trust-manager-propagated-custom-ca
+        mounts:
+          volumes:
+          - name: ca-certificates
+            configMap:
+              name: trust-manager-propagated-custom-ca
 
       #######################
       ### Fluent Operator ###
       #######################
       fluentOperator:
-        enabled: false
+        enabled: true
 
         operator:
           initContainer: {}
@@ -245,82 +256,125 @@ settings: |
           gatewayContainerAllowedImages:
             allowedRepos:
               - artifacts-artefacts.devops.cloud-nuage.canada.ca/
+              - artifacts-artefacts.devops.cloud-nuage.canada.ca:443/
               - ghcr.io/
               - docker.io/
               - docker.elastic.co/
               - mcr.microsoft.com/
               - quay.io/
               - registry.k8s.io/
-              - cgr.dev/
           restrictPodAnnotations:
             excludedNamespaces:
               - 'backstage'
           systemContainerAllowedImages:
             allowedRepos:
               - artifacts-artefacts.devops.cloud-nuage.canada.ca/
+              - artifacts-artefacts.devops.cloud-nuage.canada.ca:443/
               - ghcr.io/
               - docker.io/
               - docker.elastic.co/
               - mcr.microsoft.com/
               - quay.io/
               - registry.k8s.io/
-              - cgr.dev/
+              - icr.io/
           solutionContainerAllowedImages:
             allowedRepos:
               - artifacts-artefacts.devops.cloud-nuage.canada.ca/
+              - artifacts-artefacts.devops.cloud-nuage.canada.ca:443/
               - ghcr.io/
               - docker.io/
               - docker.elastic.co/
               - mcr.microsoft.com/
               - quay.io/
               - registry.k8s.io/
-              - cgr.dev/
+
+      #########################
+      ### Grafana Operator ###
+      #########################
+      grafana:
+        enabled: true
+        dashboard:
+          repository: https://github.com/gccloudone-aurora/grafana-dashboards.git
+          path: .
+          targetRevision: main
+          instanceSelector:
+            matchLabels:
+              dashboards: aurora
+
+        alerting:
+          enabled: true
+          repository: https://github.com/gccloudone-aurora/grafana-alerts.git
+          path: .
+          targetRevision: main
+          datasourceUid: prometheus
+          instanceSelector:
+            matchLabels:
+              dashboards: aurora
+          folders:
+            trivy:
+              enabled: true
+          timeIntervals:
+            weekday-morning:
+              enabled: true
+          notificationTemplates:
+            gcNotify:
+              enabled: true
+          managedSecrets:
+            trivy-gc-notify:
+              enabled: true
+              stringData:
+                trivy-webhook-url: "https://api.notification.canada.ca/v2/notifications/email?="
+                trivy-webhook-authorization-credentials: '<path:<FILLIN_ARGO_KV>#<FILLIN_ARGO_KV_PREFIX>-grafana-trivy-webhook-auth>'
+          contactPoints:
+            trivy-gc-notify:
+              enabled: true
+              recipients:
+                - email: '<path:<FILLIN_ARGO_KV>#<FILLIN_ARGO_KV_PREFIX>-grafana-dev-email>'
+                  name: '<path:<FILLIN_ARGO_KV>#<FILLIN_ARGO_KV_PREFIX>-grafana-dev-name>'
+                - email: '<path:<FILLIN_ARGO_KV>#<FILLIN_ARGO_KV_PREFIX>-grafana-owner-email>'
+                  name: '<path:<FILLIN_ARGO_KV>#<FILLIN_ARGO_KV_PREFIX>-grafana-owner-name>'
+                - email: '<path:<FILLIN_ARGO_KV>#<FILLIN_ARGO_KV_PREFIX>-grafana-owner2-email>'
+                  name: '<path:<FILLIN_ARGO_KV>#<FILLIN_ARGO_KV_PREFIX>-grafana-owner2-name>'
+              gcNotify:
+                templateId: "<FILLIN_GC_NOTIFY_TEMPLATE_ID>"
+              authorization:
+                enabled: true
+          routes:
+            trivy:
+              enabled: true
+
+        serverUrl: "https://grafana.<FILLIN_INGRESS_DOMAIN>"
+        azure:
+          clientId: '<path:<FILLIN_ARGO_KV>#<FILLIN_ARGO_KV_PREFIX>-grafana-sp-client-id>'
+          clientPassword: '<path:<FILLIN_ARGO_KV>#<FILLIN_ARGO_KV_PREFIX>-grafana-sp-client-secret>'
+        adminPassword: '<path:<FILLIN_ARGO_KV>#<FILLIN_ARGO_KV_PREFIX>-grafana-admin-password>'
+        authUrl: "https://login.microsoftonline.com/<path:<FILLIN_ARGO_KV>#<FILLIN_ARGO_KV_PREFIX>-tenant-id>/oauth2/v2.0/authorize"
+        tokenUrl: "https://login.microsoftonline.com/<path:<FILLIN_ARGO_KV>#<FILLIN_ARGO_KV_PREFIX>-tenant-id>/oauth2/v2.0/token"
+
+        downloadDashboards: {}
+
+        initChownData: {}
+
+        sidecar: {}
+
+        lokiDataSource:
+          url: "http://loki-gateway.loki-system.svc.cluster.local"
+          user: '<path:<FILLIN_ARGO_KV>#<FILLIN_ARGO_KV_PREFIX>-loki-user>'
+          password: '<path:<FILLIN_ARGO_KV>#<FILLIN_ARGO_KV_PREFIX>-loki-password>'
 
       #################
       ### KubeBench ###
       #################
       kubebench:
-        enabled: false
-
+        enabled: true
         cronjob:
-          schedule: "0 6 * * *"
+          schedule: "30 10 * * *"
 
       ################
       ### KubeCost ###
       ################
       kubecost:
-        enabled: false
-
-        frontend: {}
-
-        costModel: {}
-
-        networkCosts: {}
-
-        clusterController: {}
-
-        token: '<path:<FILLIN_ARGO_KV>#<FILLIN_ARGO_KV_PREFIX>-kubecost-token>'
-
-        azure:
-          subscriptionId: '<path:<FILLIN_ARGO_KV>#<FILLIN_ARGO_KV_PREFIX>-subscription-id>'
-          clientId: '<path:<FILLIN_ARGO_KV>#<FILLIN_ARGO_KV_PREFIX>-kubecost-sp-client-id>'
-          clientPassword: '<path:<FILLIN_ARGO_KV>#<FILLIN_ARGO_KV_PREFIX>-kubecost-sp-client-secret>'
-          tenantId: '<path:<FILLIN_ARGO_KV>#<FILLIN_ARGO_KV_PREFIX>-tenant-id>'
-
-        cloudServiceKey: '<path:<FILLIN_ARGO_KV>#<FILLIN_ARGO_KV_PREFIX>-kubecost-cloud-service-key>'
-        productKey: '<path:<FILLIN_ARGO_KV>#<FILLIN_ARGO_KV_PREFIX>-kubecost-product-key>'
-
-      #################################
-      ### Kubernetes Event Exporter ###
-      #################################
-      kubernetesEventExporter:
-        enabled: false
-
-        config:
-          output:
-            loki:
-              url: "https://loki.<FILLIN_INGRESS_DOMAIN>/loki/api/v1/push"
-              authorization: '<path:<FILLIN_ARGO_KV>#<FILLIN_ARGO_KV_PREFIX>-loki-authorization>'
+        enabled: true
 
       ###########
       ### NTP ###
@@ -360,29 +414,53 @@ settings: |
           thanos: {}
 
         alertmanager:
-          enabled: false
+          enabled: true
+          alertmanagerSpec:
+            replicas: 2
+            storage: 2Gi
+          config:
+            environments:
+              prod: {}
+              nonProd: {}
+              dev:
+                matchers:
+                  - "class = testing"
+                  - "target =~ control-plane-aur-prod-cc-00-aks|istio-ingress-gateway-aur-prod-cc-00-aks"
+                  - "cluster =~ aur-prod-cc-00-aks"
 
         prometheus:
-          prometheusSpec: {}
+          prometheusSpec:
+            additionalAlertManagerHosts:
+              - alertmanager-0.aurora.<FILLIN_INGRESS_DOMAIN>
+              - alertmanager-1.aurora.<FILLIN_INGRESS_DOMAIN>
+            thanos:
+              enabled: true
+              logLevel: info
+              blockSize: 2h
+              objectStorage:
+                  provider: azure
+                  storageAccountName: '<path:<FILLIN_ARGO_KV>#<FILLIN_ARGO_KV_PREFIX>-thanos-sa-name>'
+                  containerName: 'thanos'
+                  createContainer: false # TF handles this
+                  endpoint: blob.core.windows.net
+                  auth: workloadIdentity
+                  clientId: '<path:<FILLIN_ARGO_KV>#<FILLIN_ARGO_KV_PREFIX>-thanos-workloadidentity-client-id>'
+                  storageAccountKey: "" # Must be blank if using workload identity auth
+              sidecar:
+                resources:
+                  requests:
+                    cpu: 250m
+                    memory: 500Mi
+                  limits:
+                    cpu: 500m
+                    memory: 512Mi
+
 
         thanosRuler:
           thanosRulerSpec: {}
 
         grafana:
-          adminPassword: '<path:<FILLIN_ARGO_KV>#<FILLIN_ARGO_KV_PREFIX>-grafana-admin-password>'
-          authUrl: "https://login.microsoftonline.com/<path:<FILLIN_ARGO_KV>#<FILLIN_ARGO_KV_PREFIX>-tenant-id>/oauth2/v2.0/authorize"
-          tokenUrl: "https://login.microsoftonline.com/<path:<FILLIN_ARGO_KV>#<FILLIN_ARGO_KV_PREFIX>-tenant-id>/oauth2/v2.0/token"
-
-          downloadDashboards: {}
-
-          initChownData: {}
-
-          sidecar: {}
-
-          lokiDataSource:
-            url: "http://loki-gateway.loki.svc.cluster.local"
-            user: '<path:<FILLIN_ARGO_KV>#<FILLIN_ARGO_KV_PREFIX>-loki-user>'
-            password: '<path:<FILLIN_ARGO_KV>#<FILLIN_ARGO_KV_PREFIX>-loki-password>'
+          enabled: false
 
         kubeStateMetrics: {}
 
@@ -394,24 +472,9 @@ settings: |
               ipAddress: <FILLIN_ISTIO_INGRESS_GATEWAY>
 
         msteams:
-          connectors:
-            alertTesting: '<path:<FILLIN_ARGO_KV>#<FILLIN_ARGO_KV_PREFIX>-alertmanager-notifications-msteams-connector-testing>'
-            prodCritical: '<path:<FILLIN_ARGO_KV>#<FILLIN_ARGO_KV_PREFIX>-alertmanager-notifications-msteams-connector-prod-critical>'
-            prodMajor: '<path:<FILLIN_ARGO_KV>#<FILLIN_ARGO_KV_PREFIX>-alertmanager-notifications-msteams-connector-prod-major>'
-            prodMinor: '<path:<FILLIN_ARGO_KV>#<FILLIN_ARGO_KV_PREFIX>-alertmanager-notifications-msteams-connector-prod-minor>'
-            nonProdCritical: '<path:<FILLIN_ARGO_KV>#<FILLIN_ARGO_KV_PREFIX>-alertmanager-notifications-msteams-connector-non-prod-critical>'
-            nonProdMajor: '<path:<FILLIN_ARGO_KV>#<FILLIN_ARGO_KV_PREFIX>-alertmanager-notifications-msteams-connector-non-prod-major>'
-            nonProdMinor: '<path:<FILLIN_ARGO_KV>#<FILLIN_ARGO_KV_PREFIX>-alertmanager-notifications-msteams-connector-non-prod-minor>'
-            devCritical: '<path:<FILLIN_ARGO_KV>#<FILLIN_ARGO_KV_PREFIX>-alertmanager-notifications-msteams-connector-dev-critical>'
-            devMajor: '<path:<FILLIN_ARGO_KV>#<FILLIN_ARGO_KV_PREFIX>-alertmanager-notifications-msteams-connector-dev-major>'
-            devMinor: '<path:<FILLIN_ARGO_KV>#<FILLIN_ARGO_KV_PREFIX>-alertmanager-notifications-msteams-connector-dev-minor>'
-
-        jiralert:
-          config:
-            apiURL: '<path:<FILLIN_ARGO_KV>#<FILLIN_ARGO_KV_PREFIX>-alertmanager-notifications-jira-api-url>'
-            project: 'CN'
-            user: '<path:<FILLIN_ARGO_KV>#<FILLIN_ARGO_KV_PREFIX>-alertmanager-notifications-jira-user>'
-            password: '<path:<FILLIN_ARGO_KV>#<FILLIN_ARGO_KV_PREFIX>-alertmanager-notifications-jira-password>'
+          webhooks:
+            devCritical: '<path:<FILLIN_ARGO_KV>#<FILLIN_ARGO_KV_PREFIX>-alertmanager-msteamsv2-dev-critical>'
+            devMajor: '<path:<FILLIN_ARGO_KV>#<FILLIN_ARGO_KV_PREFIX>-alertmanager-msteamsv2-dev-major>'
 
         priorityClassName: platform-cluster-critical
 
@@ -427,11 +490,31 @@ settings: |
       trivy:
         enabled: true
 
+        useAuroraImagePullSecret: true
+
+        resources:
+          limits:
+            memory: 1Gi
+
+        trivyOperator:
+          # We exclude windows based microsoft images as we run on Linux nodes (Trivy will attempt to scan windows versions since image refs deployed by Azure uses both Windows and Linux in same spec)
+          # Also exclude auto to ensure istio proxy scans don't fail (proxy submits auto as the image ref, which is fixed when the container runs, but not for Trivy scanning)
+          excludeImages: "mcr.microsoft.com/oss/kubernetes-csi/*:*-windows*,mcr.microsoft.com/oss/v2/kubernetes-csi/*:*-windows*,quay.io/prometheus/*,quay.io/prometheus-operator/*,mcr.microsoft.com/oss/azure/aad-pod-identity/*:*-windows*,mcr.microsoft.com/azuredefender/*:*-windows*,mcr.microsoft.com/oss/v2/kubernetes/*:*-windows*,auto"
+
       ################
       ### Tetragon ###
       ################
       tetragon:
         enabled: true
+
+        prometheus:
+          serviceMonitor:
+            enabled: true
+
+        policies:
+          repository: https://github.com/gccloudone-aurora/tetragon-policies.git
+          path: .
+          targetRevision: main
 
       #####################
       ### Trust Manager ###
@@ -469,7 +552,7 @@ settings: |
         volumeSnapshot:
           resourceGroupName: '<path:<FILLIN_ARGO_KV>#<FILLIN_ARGO_KV_PREFIX>-velero-sa-resource-group-name>'
 
-        azureWorkloadIdentity:
+        workloadIdentity:
           enabled: true
           clientId: '<path:<FILLIN_ARGO_KV>#<FILLIN_ARGO_KV_PREFIX>-velero-aadpodidentity-client-id>'
 
@@ -488,7 +571,7 @@ settings: |
 
         controllers:
           syncAppProjects:
-            enabled: false
+            enabled: true
           imagePullSecrets:
             enabled: false
           workflows:
@@ -525,7 +608,7 @@ settings: |
       ### Elastic ###
       ###############
       elastic:
-        enabled: true
+        enabled: false
 
       #############
       ### Istio ###
@@ -538,26 +621,29 @@ settings: |
             - '*.<FILLIN_INGRESS_DOMAIN>'
             - '*.aurora.<FILLIN_INGRESS_DOMAIN>'
 
-          # additionalLBPorts:
-          #   - name: tcp-postgres
-          #     protocol: TCP
-          #     port: 5432         # LoadBalancer port
-          #     targetPort: 5432   # Envoy / pod port
-          # additionalGatewayHosts:
-          #   - hosts: ["*"]
-          #     port:
-          #       name: tcp-postgres
-          #       protocol: TCP
-          #       number: 5432
+        # additionalLBPorts:
+        #   - name: tcp-postgres
+        #     protocol: TCP
+        #     port: 5432         # LoadBalancer port
+        #     targetPort: 5432   # Envoy / pod port
+        # additionalGatewayHosts:
+        #   - hosts: ["*"]
+        #     port:
+        #       name: tcp-postgres
+        #       protocol: TCP
+        #       number: 5432
 
         ingressIstioController:
-          image:
-            tag: main
+         image:
+           tag: main
 
         istiod:
           pilot: {}
 
           proxy: {}
+
+          oauth2:
+            enabled: true
 
         # networkPolicy:
         #   ingressGeneral:
@@ -571,10 +657,12 @@ settings: |
       ### Kiali ###
       #############
       kiali:
-        enabled: false
+        enabled: true
 
         instances:
           - name: kiali
+            auth:
+              strategy: anonymous
             grafana:
               token: '<path:<FILLIN_ARGO_KV>#<FILLIN_ARGO_KV_PREFIX>-kiali-grafana-token>'
 
@@ -591,6 +679,12 @@ settings: |
       ### Solr ###
       ############
       solr:
+         enabled: false
+
+      ###############
+      ### Strimzi ###
+      ###############
+      strimzi:
         enabled: false
 
   ############
@@ -618,14 +712,14 @@ settings: |
             env:
               ARGOCD_ENV_AVP_TYPE: "azurekeyvault"
               ARGOCD_ENV_AZURE_CLIENT_ID: '<path:<FILLIN_ARGO_KV>#<FILLIN_ARGO_KV_PREFIX>-argocd-kv-aadpodidentity-client-id>'
-          azureWorkloadIdentity:
+          workloadIdentity:
             enabled: true
             clientId: '<path:<FILLIN_ARGO_KV>#<FILLIN_ARGO_KV_PREFIX>-argocd-kv-aadpodidentity-client-id>'
           oidcAuthSP:
             credentials:
               tenantID: '<path:<FILLIN_ARGO_KV>#<FILLIN_ARGO_KV_PREFIX>-tenant-id>'
-              clientID: '<path:<FILLIN_ARGO_KV>#gcdc-auroramgmt-platform-kvs-argocd-oidc-sp-client-id>'
-              clientSecret: '<path:<FILLIN_ARGO_KV>#gcdc-auroramgmt-platform-kvs-argocd-oidc-sp-client-secret>'
+              clientID: '<path:<FILLIN_ARGO_KV>#<FILLIN_ARGO_KV_PREFIX>-argocd-oidc-sp-client-id>'
+              clientSecret: '<path:<FILLIN_ARGO_KV>#<FILLIN_ARGO_KV_PREFIX>-argocd-oidc-sp-client-secret>'
           notifications:
             enabled: true
           netpol:
@@ -657,7 +751,7 @@ settings: |
                 type: git
                 url: https://github.com/gccloudone-aurora/project-aurora-sdlc.git
             repositoryCreds:
-              private-repo-cred:
+              private-repo-creds:
                 type: git
                 url: https://github.com/gccloudone-aurora/project-aurora-mgmt.git
                 username: "<path:<FILLIN_ARGO_KV>#<FILLIN_ARGO_KV_PREFIX>-github-username>"
@@ -738,7 +832,7 @@ settings: |
               tenantID: '<path:<FILLIN_ARGO_KV>#<FILLIN_ARGO_KV_PREFIX>-tenant-id>'
               clientID: '<path:<FILLIN_ARGO_KV>#<FILLIN_ARGO_KV_PREFIX>-argocd-oidc-sp-client-id>'
               clientSecret: '<path:<FILLIN_ARGO_KV>#<FILLIN_ARGO_KV_PREFIX>-argocd-oidc-sp-client-secret>'
-          azureWorkloadIdentity:
+          workloadIdentity:
             enabled: true
             clientId: '<path:<FILLIN_ARGO_KV>#<FILLIN_ARGO_KV_PREFIX>-argocd-kv-sol-workload-identity-client-id>'
           notifications:
@@ -755,6 +849,10 @@ settings: |
               requests:
                 cpu: 250m
                 memory: 500Mi
+          # applicationSet:
+          #   # https://github.com/argoproj-labs/argocd-operator/pull/1988
+          #   sourceNamespaces:
+          #     - gitops-workload-b
           register:
             clusters:
               aur-prod-cc-00-aks:
@@ -766,6 +864,12 @@ settings: |
                 type: helm
                 url: https://gccloudone-aurora.github.io/aurora-platform-charts
             repositoryCreds: {}
+
+        # project:
+        #   global:
+        #     sourceRepos:
+        #       - "https://artifacts-artefacts.devops.cloud-nuage.canada.ca/*"
+
           sourceNamespaces:
             - "/^((?!-system$).)*$/"
 
@@ -779,10 +883,63 @@ settings: |
       ### Loki ###
       ############
       loki:
-        enabled: false
+        enabled: true
+
         basicAuth:
-          username: "<path:<FILLIN_ARGO_KV>#<FILLIN_ARGO_KV_PREFIX>-loki-username>"
-          password: "<path:<FILLIN_ARGO_KV>#<FILLIN_ARGO_KV_PREFIX>-loki-password>"
+          htpasswd: "<path:<FILLIN_ARGO_KV>#<FILLIN_ARGO_KV_PREFIX>-loki-htpasswd>"
+
         logStorageLocation:
           storageAccountName: "<path:<FILLIN_ARGO_KV>#<FILLIN_ARGO_KV_PREFIX>-loki-storageaccountname>"
           storageAccountKey: "<path:<FILLIN_ARGO_KV>#<FILLIN_ARGO_KV_PREFIX>-loki-storageaccountkey>"
+
+      ####################################################
+      ### Thanos Query, Compactory, and Store Gateway ####
+      ####################################################
+      thanos:
+        enabled: true
+        logLevel: info
+        objectStorage:
+            auth: workloadIdentity
+            # Using a shared bucket and uses the same bucket in the current core sidecar for mgmt
+            buckets:
+              - name: default
+                storageAccountName: '<path:<FILLIN_ARGO_KV>#<FILLIN_ARGO_KV_PREFIX>-thanos-sa-name>'
+                containerName: 'thanos'
+                endpoint: blob.core.windows.net
+                clientId: '<path:<FILLIN_ARGO_KV>#<FILLIN_ARGO_KV_PREFIX>-thanos-workloadidentity-client-id>'
+        image:
+          tag: "v0.41.0"
+        query:
+          replicas: 1
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              cpu: '1'
+              memory: 1Gi
+        storeGateway:
+          replicas: 1
+          persistence:
+            size: 20Gi
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              cpu: '1'
+              memory: 2Gi
+        compactor:
+          retention:
+            raw: 30d
+            fiveMin: 90d
+            oneHour: 1y
+          persistence:
+            size: 50Gi
+          resources:
+            requests:
+              cpu: 500m
+              memory: 1Gi
+            limits:
+              cpu: '1'
+              memory: 2Gi
